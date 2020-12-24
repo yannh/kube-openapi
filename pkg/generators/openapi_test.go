@@ -90,6 +90,9 @@ package foo
 type Blah struct {
 	// A simple string
 	String string
+	// A string with a list of accepted values
+    // +valid=["TCP", "UDP", "SCTP"]
+	StringEnum string
 	// A simple int
 	Int int `+"`"+`json:",omitempty"`+"`"+`
 	// An int considered string simple int
@@ -163,6 +166,15 @@ Properties: map[string]spec.Schema{
 "String": {
 SchemaProps: spec.SchemaProps{
 Description: "A simple string",
+Default: "",
+Type: []string{"string"},
+Format: "",
+},
+},
+"StringEnum": {
+SchemaProps: spec.SchemaProps{
+Description: "A string with a list of accepted values",
+Enum: ["TCP", "UDP", "SCTP"]
 Default: "",
 Type: []string{"string"},
 Format: "",

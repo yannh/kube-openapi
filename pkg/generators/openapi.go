@@ -38,6 +38,7 @@ import (
 const tagName = "k8s:openapi-gen"
 const tagOptional = "optional"
 const tagDefault = "default"
+const tagValid = "valid"
 
 // Known values for the tag.
 const (
@@ -527,6 +528,18 @@ func defaultFromComments(comments []string) (interface{}, error) {
 	return i, nil
 }
 
+func validFromComments(comments []string) (interface{}, error) {
+	tag, err := getSingleTagsValue(comments, tagValid)
+	if tag == "" {
+		return nil, err
+	}
+	var i interface{}
+	if err := json.Unmarshal([]byte(tag), &i); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal default: %v", err)
+	}
+	return i, nil
+}
+
 func mustEnforceDefault(t *types.Type, omitEmpty bool) (interface{}, error) {
 	switch t.Kind {
 	case types.Pointer, types.Map, types.Slice, types.Array, types.Interface:
@@ -545,6 +558,20 @@ func mustEnforceDefault(t *types.Type, omitEmpty bool) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("not sure how to enforce default for %v", t.Kind)
 	}
+}
+
+
+func (g openAPITypeWriter) generateValid(comments []string, t *types.Type) error {
+	t = resolveAliasType(t)
+	def, err := validFromComments(comments)
+	if err != nil {
+		return err
+	}
+	if def != nil {
+		g.Do("Enum: $.$,\n", fmt.Sprintf("%#v", def))
+	}
+
+	return nil
 }
 
 func (g openAPITypeWriter) generateDefault(comments []string, t *types.Type, omitEmpty bool) error {
@@ -633,6 +660,12 @@ func (g openAPITypeWriter) generateProperty(m *types.Member, parent *types.Type)
 		return nil
 	}
 	omitEmpty := strings.Contains(reflect.StructTag(m.Tags).Get("json"), "omitempty")
+
+	if err := g.generateValid(m.CommentLines, m.Type); err != nil {
+		return fmt.Errorf("failed to generate valid in %v: %v: %v", parent, m.Name, err)
+	}
+
+
 	if err := g.generateDefault(m.CommentLines, m.Type, omitEmpty); err != nil {
 		return fmt.Errorf("failed to generate default in %v: %v: %v", parent, m.Name, err)
 	}
