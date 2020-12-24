@@ -38,7 +38,7 @@ import (
 const tagName = "k8s:openapi-gen"
 const tagOptional = "optional"
 const tagDefault = "default"
-const tagValid = "valid"
+const tagEnum = "enum"
 
 // Known values for the tag.
 const (
@@ -529,7 +529,7 @@ func defaultFromComments(comments []string) (interface{}, error) {
 }
 
 func enumFromComments(comments []string) (interface{}, error) {
-	tag, err := getSingleTagsValue(comments, tagValid)
+	tag, err := getSingleTagsValue(comments, tagEnum)
 	if tag == "" {
 		return nil, err
 	}
@@ -568,7 +568,14 @@ func (g openAPITypeWriter) generateEnum(comments []string, t *types.Type) error 
 		return err
 	}
 	if def != nil {
-		g.Do("Enum: $.$,\n", fmt.Sprintf("%#v", def))
+		switch v := reflect.ValueOf(def); v.Kind() {
+		case reflect.Slice:
+			m, _ := json.Marshal(def)
+			g.Do("Enum: $.$,\n", fmt.Sprintf("%s", m))
+
+		default:
+			return fmt.Errorf("invalid value type for +enum: %s", v.Kind())
+		}
 	}
 
 	return nil
@@ -664,7 +671,6 @@ func (g openAPITypeWriter) generateProperty(m *types.Member, parent *types.Type)
 	if err := g.generateEnum(m.CommentLines, m.Type); err != nil {
 		return fmt.Errorf("failed to generate enum in %v: %v: %v", parent, m.Name, err)
 	}
-
 
 	if err := g.generateDefault(m.CommentLines, m.Type, omitEmpty); err != nil {
 		return fmt.Errorf("failed to generate default in %v: %v: %v", parent, m.Name, err)
