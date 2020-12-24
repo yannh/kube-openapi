@@ -561,8 +561,7 @@ func mustEnforceDefault(t *types.Type, omitEmpty bool) (interface{}, error) {
 }
 
 
-func (g openAPITypeWriter) generateEnum(comments []string, t *types.Type) error {
-	t = resolveAliasType(t)
+func (g openAPITypeWriter) generateEnum(comments []string) error {
 	def, err := enumFromComments(comments)
 	if err != nil {
 		return err
@@ -574,7 +573,7 @@ func (g openAPITypeWriter) generateEnum(comments []string, t *types.Type) error 
 			g.Do("Enum: $.$,\n", fmt.Sprintf("%s", m))
 
 		default:
-			return fmt.Errorf("invalid value type for +enum: %s", v.Kind())
+			return fmt.Errorf("invalid value type for +enum (must be a slice): %s", v.Kind())
 		}
 	}
 
@@ -668,7 +667,7 @@ func (g openAPITypeWriter) generateProperty(m *types.Member, parent *types.Type)
 	}
 	omitEmpty := strings.Contains(reflect.StructTag(m.Tags).Get("json"), "omitempty")
 
-	if err := g.generateEnum(m.CommentLines, m.Type); err != nil {
+	if err := g.generateEnum(m.CommentLines); err != nil {
 		return fmt.Errorf("failed to generate enum in %v: %v: %v", parent, m.Name, err)
 	}
 
