@@ -91,7 +91,7 @@ type Blah struct {
 	// A simple string
 	String string
 	// A string with a list of accepted values
-    // +valid=["TCP", "UDP", "SCTP"]
+	// +enum=["TCP", "UDP", "SCTP"]
 	StringEnum string
 	// A simple int
 	Int int `+"`"+`json:",omitempty"`+"`"+`

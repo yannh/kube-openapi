@@ -528,7 +528,7 @@ func defaultFromComments(comments []string) (interface{}, error) {
 	return i, nil
 }
 
-func validFromComments(comments []string) (interface{}, error) {
+func enumFromComments(comments []string) (interface{}, error) {
 	tag, err := getSingleTagsValue(comments, tagValid)
 	if tag == "" {
 		return nil, err
@@ -561,9 +561,9 @@ func mustEnforceDefault(t *types.Type, omitEmpty bool) (interface{}, error) {
 }
 
 
-func (g openAPITypeWriter) generateValid(comments []string, t *types.Type) error {
+func (g openAPITypeWriter) generateEnum(comments []string, t *types.Type) error {
 	t = resolveAliasType(t)
-	def, err := validFromComments(comments)
+	def, err := enumFromComments(comments)
 	if err != nil {
 		return err
 	}
@@ -661,8 +661,8 @@ func (g openAPITypeWriter) generateProperty(m *types.Member, parent *types.Type)
 	}
 	omitEmpty := strings.Contains(reflect.StructTag(m.Tags).Get("json"), "omitempty")
 
-	if err := g.generateValid(m.CommentLines, m.Type); err != nil {
-		return fmt.Errorf("failed to generate valid in %v: %v: %v", parent, m.Name, err)
+	if err := g.generateEnum(m.CommentLines, m.Type); err != nil {
+		return fmt.Errorf("failed to generate enum in %v: %v: %v", parent, m.Name, err)
 	}
 
 
